@@ -1,0 +1,18 @@
+
+#设置授权文件的路径， .ecl 或者.efs 文件中一种，作为密钥；
+
+#../build/bin/5678.efs
+SL_KEY_PATH=
+
+#指定一个参数文件的路径，这个文件一般由原厂发布，必须指定一个合法的值
+SL_CONFIG_PATH=../build/bin/sl_gnu_config.spf
+
+
+# 下面的脚步不要进行修改
+COMPILER_OPTION=$(shell if [  "${SL_KEY_PATH}" == "" ]; then echo ""; else echo "-Xlinker --sle ${SL_KEY_PATH}";fi )
+LINKER_OPTION=$(shell if [  "${SL_KEY_PATH}" == "" ]; then echo ""; else echo "--sle ${SL_KEY_PATH}";fi )
+BIN_UTILS_OPTION=$(shell if [  "${SL_KEY_PATH}" == "" ]; then echo ""; else echo "--sle ${SL_KEY_PATH} --spf ${SL_CONFIG_PATH}";fi )
+
+#$(warning "COMPILER_OPTION=${COMPILER_OPTION}")
+#$(warning "LINKER_OPTION=${LINKER_OPTION}")
+#$(warning "BIN_UTILS_OPTION=${BIN_UTILS_OPTION}")

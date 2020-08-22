@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+非法的xml文件会读取失败，你可以用浏览器来检查是否错误
+
+path：           文件路径
+align：          数据对齐，相对于存储的地址，16进制
+dataAlign:      文件数据对齐，相对于文件数据本身，不足的将会补充0，16进制
+loadLength:     为0时将会认为全部代码会载入内存，16进制
+clkDiv:         第一次载入代码时norf频率，FCLK/(N+1)，10进制
+loadFromFlash：  sram0运行代码在flash中地址
+loadToRam：      代码载入到sram0的地址
+runFromRam：     代码载入ram后开始运行的地址
+
+注意：
+    工具会先将CommonFiles以及updateCode 的文件按照参数先组合成一个文件，然后再执行root属性参数中的加密以及CRC的计算
+
+-->
+
+<!--
+如果要修改APP的空间存放位置，以下几个参数需要改动，
+root节点的loadFromFlash参数，
+appfile 节点的align属性
+以及ld文件中BASE_LADDR的值
+appInfoAddr:    app代码起始地址+0x100(VECTOR)
+loadFromFlash:  SRAM0区域在flash中起始地址
+loadToRam:      SRAM0区域在sram中起始地址
+runFromRam:     app系统Reset_Handler运行起始地址
+-->
+<root version="3" outPathName="..\out\sl.up" appInfoAddr="0x16100" loadFromFlash="0x18100"  loadToRam="0x806000" runFromRam="0x806001"
+loadLength="0x1000" lineMode="0" clkDiv="9" doDebug="1" doDecrypt="0" spiMode="0" >
+
+    <!-- base可以设置几个节点，
+    denoiseInfo     降噪参数的存放地址
+    eqData          EQ数据存放地址
+    btParam         蓝牙参数存放地址
+    btInfo          蓝牙信息的存放地址
+    sysInfo         系统参数的存放地址
+    如果没用到该某个信息，请不要在 base 节点下增加其配置节点
+
+    addr属性为在nor中的地址
+    sectors属性为所占的sector数目，每个sector为4K
+    --->
+    <base >
+        <btInfo addr="0x7E000" />
+        <!---sector 0-2 是给loader程序保留的，因为代码要对齐到8K的关系，3号sector刚好是剩下来的，作为信息的存储地址-->
+        <sysInfo addr="0x7F000"  />
+    <!-- aenc ir data占用 0x7c000，此文件未体现，请勿使用 -->
+        <eqData addr="0x7B000" sectors="1"/>
+    </base>
+    <PmuConfigFile path="..\out\pmuStartupConfig.bin"/>
+    <!--loader占用7.23K(0x2000-0x310)，和头部一起占用8K的空间-->
+    <loader path="..\bin\loader_ota.bin" />
+    <!--需要输入.cert .ecl  .efs 三种文件中的一个 -->
+    <!--certification path="..\bin\Smartlink_warranty.cert"/-->
+    <!-- 编译工具参数配置文件，有些信息需要组织到输出中 -->
+    <spf path="..\bin\sl_gnu_config.spf"/>
+
+    <!--操作norflash的配置-->
+    <norflash lineMode="0" clkDiv="9" spiMode="0" chipSel="0"/>
+    <!---ota 文件正常情况下排在app文件的前面，所以要确定保留足够的空间存储这些文件--->
+    <otafiles>
+        <!--最大支持4个文件-->
+        <!--从有效数据起始的0x2000开始存放数据,因为loader的长度就是0x2000-->
+        <!--第一个文件的align没有意义，文件都是按照0x2000的长度进行计算-->
+        <file path="..\bin\ble.bin" align="0" dataAlign="4" loadToRam="0x804000" />
+        <!--从上一个文件后面追加数据-->
+        <!--file path="..\bin\0xAA.bin" align="0" dataAlign="4" loadToRam="0x806000" /-->
+    </otafiles>
+    <appfile path="..\out\sl_temp.bin" align="0x16000" dataAlign="0" />
+    <!--额外文件，文件会以指定的对齐方式合并到输出文件中-->
+    <CommonFiles>
+    <!--- tone ， type: tone 是一个关键字，目前只能有一个tone--->
+    <file path="..\bin\tone.bin" align="0" dataAlign="0" type="tone" />
+    <!------->
+    <file path="..\bin\eq_profile_customer.eq2" align="0x7B000" dataAlign="0" type="" />
+    </CommonFiles>
+</root>
+<!--
+文件空间排列顺序
+loader
+otafiles
+appfile
+commonfiles
+-->
+

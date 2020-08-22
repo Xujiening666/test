@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--用户配置文件读取位置为 $projectRootPath+$userConfigFilePath-->
+<Root KeyContext="SYS_BOARD" projectRootPath="..\..\" userConfigFilePath="app\configs\config.h">
+	<!--源的相对目录列表-->
+	<relativeSourcePath>
+		<relative id="1" path="app\configs\"/>
+		<relative id="4" path="build\bin\"/>
+	</relativeSourcePath>
+
+	<!--输出相对目录列表-->
+	<relativeDestPath>
+		<relative id="1" path="inc\sys\"/>
+		<relative id="2" path="build\" />
+		<relative id="3" path="build\tool\" />
+		<relative id="4" path="build\bin\"/>
+	</relativeDestPath>
+
+	<!--
+	文件路径拼接顺序为，你也可以不使用relativeXXXPath路径，只需不填写relativeXXXXPathId值即可
+	源:  $projectRootPath + $relativeSourcePath + $source
+	目标:$projectRootPath + $relativeDestPath + $dest
+	-->
+
+	<context value="BOARD_SL6800_FPGA">
+		<file source="sl6800\sl6800_fpga_sys_config.h" dest="sys_config.h" relativeSourcePathId="1" relativeDestPathId="1"/>
+		<file source="sl6800\sl6800_fpga_user_config.h" dest="user_config.h" relativeSourcePathId="1" relativeDestPathId="1"/>
+		<file source="sl6800\sl6800_fpga.ld" dest="sl.ld" relativeSourcePathId="1" relativeDestPathId="2"/>
+		<file source="sl6800\module.mk" dest="module.mk" relativeSourcePathId="1" relativeDestPathId="2"/>
+	</context>
+
+	<!----------------------------------------------------------------------------->
+	<context value="BOARD_SL6800">
+		<file source="sl6800\sl6800_sys_config.h" dest="sys_config.h" relativeSourcePathId="1" relativeDestPathId="1"/>
+		<file source="sl6800\sl6800_user_config.h" dest="user_config.h" relativeSourcePathId="1" relativeDestPathId="1"/>
+		<file source="sl6800\sl6800.ld" dest="sl.ld" relativeSourcePathId="1" relativeDestPathId="2"/>
+		<file source="sl6800\module.mk" dest="module.mk" relativeSourcePathId="1" relativeDestPathId="2"/>
+		<file source="tone.bin" dest="tone.bin" relativeSourcePathId="4" relativeDestPathId="4"/>
+		<file source="sl6800_ble.bin" dest="ble.bin" relativeSourcePathId="4" relativeDestPathId="4"/>
+	</context>
+
+	<context value="BOARD_SL6800_KARAOKE">
+		<file source="sl6800\sl6800_sys_config.h" dest="sys_config.h" relativeSourcePathId="1" relativeDestPathId="1"/>
+		<file source="sl6800\sl6800_user_config.h" dest="user_config.h" relativeSourcePathId="1" relativeDestPathId="1"/>
+		<file source="sl6800\sl6800_karaoke.ld" dest="sl.ld" relativeSourcePathId="1" relativeDestPathId="2"/>
+		<file source="sl6800\module.mk" dest="module.mk" relativeSourcePathId="1" relativeDestPathId="2"/>
+		<file source="tone.bin" dest="tone.bin" relativeSourcePathId="4" relativeDestPathId="4"/>
+		<file source="sl6800_ews_ble.bin" dest="ble.bin" relativeSourcePathId="4" relativeDestPathId="4"/>
+	</context>
+
+	<!----------------------------------------------------------------------------->
+	<context value="BOARD_SL6800_EARPHONE">
+		<file source="sl6800\sl6800_sys_config.h" dest="sys_config.h" relativeSourcePathId="1" relativeDestPathId="1"/>
+		<file source="sl6800\sl6800_earphone_user_config.h" dest="user_config.h" relativeSourcePathId="1" relativeDestPathId="1"/>
+		<file source="sl6800\sl6800.ld" dest="sl.ld" relativeSourcePathId="1" relativeDestPathId="2"/>
+		<file source="sl6800\module.mk" dest="module.mk" relativeSourcePathId="1" relativeDestPathId="2"/>
+	</context>
+</Root>

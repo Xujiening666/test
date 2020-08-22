@@ -1,0 +1,8 @@
+# filter build files
+*.o
+*.d
+app/pmu_config/out/
+build/out/
+
+# filter big files
+tools/

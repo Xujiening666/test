@@ -776,6 +776,8 @@ void start_send_dir_files_list()
 	if(rec_context->total_mp2_file == 0) {
         libc_memcpy(msg + len_sum, "]}", 2);
 	    len_sum += 2;
+	    libc_memcpy(msg + len_sum, END_FRAME, LEN_END_FRAME);
+		len_sum += LEN_END_FRAME;
 	}
 	ble_cmd_send(msg, len_sum);
 	len_sum = 0;
@@ -2309,7 +2311,7 @@ void record_event_process(uint32_t event)
 		  rtc_get_time(&rtc.t);
 		  if (0 == rtc.t.second) {
 			  logi("bbbrtc:%04d-%02d-%02d, %02d:%02d:%02d",
-				  rtc.t.year+BASE_YEAR, rtc.t.month, rtc.t.day,
+				  rtc.t.year + BASE_YEAR, rtc.t.month, rtc.t.day,
 				  rtc.t.hour, rtc.t.minute, rtc.t.second);
 //			  disp_menu(MENU_CLOCK_TIME,rtc.t.hour, rtc.t.minute);
 			  get_record_time();

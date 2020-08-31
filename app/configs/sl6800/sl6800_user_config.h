@@ -170,12 +170,7 @@
 
 #define BLE_ADDR_USE_RANDOM                 1                                   //BLE设备地址使用随机值功能
 #define BLE_ADDR_DEFAULT                    {0xEA,0xEB,0xEC,0xED,0xEE,0xEF}     //BLE设备默认地址
-#define TEST_OTA                            0
-#if TEST_OTA
-#define BLE_NAME_DEFAULT                    "SL-BLE-L"  //BLE设备默认名字
-#else
 #define BLE_NAME_DEFAULT                    "RV100" //BLE设备默认名字
-#endif
 
 #define BT_RFPOWER_FORCE_EN                 1       //RF发送功率固定
 #define BT_RFPOWER_FORCE_VAL                19      //RF发送功率固定的档位，范围：0~18，功率值：(-34+2*BT_RFPOWER_FORCE_VAL) dbm
@@ -716,7 +711,7 @@
 #define BAT_VOLT_DET                        0       //如果没有电池，则不需要使能电池电压检测功能
 #endif
 
-#define BAT_QUANTITY_STEP_BIG               1       //使能大步进，大步进有5个步进，小步进有10个步进，根据产品需求选择，建议使用大步进
+#define BAT_QUANTITY_STEP_BIG               0       //使能大步进，大步进有5个步进，小步进有10个步进，根据产品需求选择，建议使用大步进
 #define BAT_HW_LB_SHUT_EN                   1       //使能硬件低电关机
 #define BAT_HW_LB_SHUT_VOLT                 2700    //设置硬件低电关机电压，只能选择2700/2800/2900/3100mV
 #define BAT_HW_OK_VOLT                      2900    //设置硬件允许开机电压，只能选择2900/3000/3100/3300mV

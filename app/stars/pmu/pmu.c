@@ -1,4 +1,4 @@
-#define LOG_LEV 3
+#define LOG_LEV 5
 #include "sys_inc.h"
 #include "user_config.h"
 #include "gpio.h"
@@ -6,6 +6,7 @@
 #include "key.h"
 #include "task_main.h"
 #include "bt_host_api.h"
+#include "ble_app.h"
 
 //general variable
 QueueHandle_t pmu_mutex = NULL;
@@ -47,16 +48,16 @@ const uint16_t coulomp_voltage_table[CV_TABLE_LEN] = {
 AT(.pmu_rodata_seg)
 const uint16_t coulomp_voltage_table[CV_TABLE_LEN] = {
     3300, //step0    0%:(0000~3300]
-    3500, //step1   10%:(3300~3500]
-    3618, //step2   20%:(3500~3618]
-    3739, //step3   30%:(3618~3739]
-    3770, //step4   40%:(3739~3770]
-    3809, //step5   50%:(3770~3809]
-    3856, //step6   60%:(3809~3856]
-    3916, //step7   70%:(3856~3916]
-    3989, //step8   80%:(3916~3989]
-    4098, //step9   90%:(4989~4098]
-    4200, //step10 100%:(4098~4200]
+    3500, //step1   10%:(3300~3500]  200
+    3618, //step2   20%:(3500~3618]  118
+    3739, //step3   30%:(3618~3739]  121
+    3770, //step4   40%:(3739~3770]  31 
+    3809, //step5   50%:(3770~3809]  39
+    3856, //step6   60%:(3809~3856]  47
+    3916, //step7   70%:(3856~3916]  60
+    3989, //step8   80%:(3916~3989]  73
+    4098, //step9   90%:(3989~4098]  109
+    4200, //step10 100%:(4098~4200]  102
 };
 #endif
 
@@ -134,7 +135,6 @@ void pmu_timer_cb(xTimerHandle xTimer)
 {
     uint16_t vbat_max, vbat_min;
     uint32_t i, bat_quantity_total = 0;
-
 #if ((PMU_EXIST == 0) || (PMU_VERSION == 0))
     bat_info.vbat = 4200;
     bat_info.exist = true;
@@ -181,6 +181,7 @@ void pmu_timer_cb(xTimerHandle xTimer)
 #if MODE_BT_EN
         bt_send_message(BT_EVENT_BAT_UP);
 #endif
+        send_battery_message();
     }
 
     bat_quantity_percent_old = bat_quantity_percent;

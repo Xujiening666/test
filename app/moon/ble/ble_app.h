@@ -244,5 +244,7 @@ void set_ble_record_start_flag(uint8_t flag);
 void SN_2_ASCALL(uint32_t tmp);
 void send_unbind_user_msg(void);
 void send_simple_status(void);
+void send_battery_message(void);
+
 
 #endif

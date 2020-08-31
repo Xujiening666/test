@@ -448,17 +448,15 @@ void send_simple_status()
 
 static uint8_t  ble_record_start = 0;
 static bool can_send_real_record_data = false;
-//extern void send_rec_file(int32_t file_id); 
-//extern uint8_t del_rec_file(uint32_t del_file_id);
-//extern void set_time(uint32_t nTime);
-
-//extern uint32_t NEED_SEND_FILE_ID;
 extern uint32_t NEED_SEND_FILE_OFFSET;
 extern char NEED_SEND_DEL_FILE_NAME[15];
 
 AT(.ble_flash_seg)
 void send_record_message(uint8_t cmd)
 {
+	if(!ble_con_flag)
+			return;
+
     uint8_t *msg;
 	msg =  general_calloc(20);
     uint32_t current_wav_id = get_current_wav_id();
@@ -472,6 +470,25 @@ void send_record_message(uint8_t cmd)
 	*(msg + 13) = current_wav_id >> 24;
 	libc_memcpy(msg + 14, END_FRAME, LEN_END_FRAME);
 	ble_cmd_send(msg, 20);
+	general_free(msg);
+}
+
+AT(.ble_flash_seg)
+void send_battery_message(void)
+{
+	if(!ble_con_flag)
+			return;
+	
+    uint8_t *msg;
+	msg =  general_calloc(20);
+	libc_memcpy(msg, BANBEN_ID, LEN_FIRST_BANBEN_ID);
+	libc_memcpy(msg + OFFSET_FIRST_FRAME, FIRST_FRAME, LEN_FIRST_FRAME);
+	*(msg + OFFSET_CMD) = TAG_GET_BATTERY;
+	*(msg + OFFSET_ERROR) = ERR_CODE_SUCCESS;
+	*(msg + OFFSET_ERROR + 1) = pmu_get_bat_quantity_percent();
+	*(msg + OFFSET_ERROR + 2) = pmu_bat_is_charging();
+	libc_memcpy(msg + 12, END_FRAME, LEN_END_FRAME);
+	ble_cmd_send(msg, 18);
 	general_free(msg);
 }
 
@@ -517,6 +534,9 @@ uint8_t reset_device()
 AT(.ble_flash_seg)
 void send_unbind_user_msg()
 {
+    if(!ble_con_flag)
+		return;
+	
     uint8_t *msg;
 	msg =  general_calloc(16);
 	libc_memcpy(msg, BANBEN_ID, LEN_FIRST_BANBEN_ID);
@@ -652,8 +672,7 @@ void process_cmd(uint8_t *buf,uint16_t buff_size)
 			}
 			break;
 		case TAG_GET_BATTERY:
-			*(msg + OFFSET_ERROR + 1) = pmu_get_bat_quantity_percent();
-		    data_len = 3;
+			send_battery_message();
 			break;
 		case TAG_SET_USER:
 			flag = 1;
@@ -710,11 +729,8 @@ void process_cmd(uint8_t *buf,uint16_t buff_size)
 				}
 			}
 			logi("del_file_name %s", NEED_SEND_DEL_FILE_NAME);
-//			error_code = del_rec_file_by_name();
-//			data_len = 2;
-//			break;
 			tmp = 0;
-            tmp = (buf[OFFSET_CMD + 4] - '0')* 10000;
+            tmp = (buf[OFFSET_CMD + 4] - '0') * 10000;
             tmp = (tmp + buf[OFFSET_CMD + 5] - '0') * 1000;
 		    tmp = (tmp + buf[OFFSET_CMD + 6] - '0') * 100;
 			tmp = (tmp + buf[OFFSET_CMD + 7] - '0') * 10;

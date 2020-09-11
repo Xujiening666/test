@@ -458,7 +458,7 @@ void usb_edge_cb(void)
 {
     usb_det.edge_cnt++;
 	/* Modify by arunboy 20200617 待测试*/
-    if (usb_det.edge_check_en && usb_det.edge_cnt >= 2) {   //has usb signal
+    if (usb_det.edge_check_en && usb_det.edge_cnt >= 3) {   //has usb signal
         pin_irq_config(USB_DP_PIN_NUM, PIN_IRQ_DIS);
         if (UsbEdgeChecktimer != NULL) {
             xTimerStop(UsbEdgeChecktimer,10);

@@ -4,6 +4,7 @@
 #include "ai.h"
 #include "ble_app.h"
 #include "xfs.h"
+#include "sleep.h"
 
  
 TaskHandle_t send_file_task_handler;
@@ -76,14 +77,13 @@ void set_stop_sending_flag(uint8_t flag)
 AT(.ble_app_flash_seg)
 void start_send_file()
 {
-//	uint32_t send_size = 0;
 	send_rec_file_t *send_rec_file = (send_rec_file_t*)g_send_rec_file_t;
 	send_rec_file->status = SEND_FILE_CMD_ING;
-	char file_name[50] = RECORD_FILE_DIR;
+	char file_name[30] = RECORD_FILE_DIR;
 	XFILE *frxin;
 	FRESULT res;
-	uint32_t read_size;
 	FSIZE_t file_size;
+	uint32_t read_size;
 	uint32_t file_id = 0;
 	uint32_t file_duration = 0;
 	bool need_send_end_frame = true;
@@ -114,7 +114,10 @@ void start_send_file()
 	libc_memcpy(bs_buf + 8, &file_id, 4);
 	libc_memcpy(bs_buf + 12, &file_size, 6);
 	ble_send_state = ble_file_send(bs_buf, 18);
+
+	auto_shutdown(false);
 	logi("file_size = %d,file_id = %d",file_size,file_id);
+
     while (ble_send_state == 0){
         msleep(5);
         ble_send_state = ble_file_send(bs_buf, 18);
@@ -126,9 +129,7 @@ void start_send_file()
         }
 	}
 	logi("file_size = %d,NEED_SEND_FILE_OFFSET = %d",file_size,NEED_SEND_FILE_OFFSET);
-//	send_size += NEED_SEND_FILE_OFFSET;
 	while (1) {
-        
         xfread(frxin, bs_buf, BT_BUFFER_SIZE, &read_size);
         if (read_size > 0) {
             ble_send_state = ble_file_send(bs_buf,read_size);
@@ -136,8 +137,6 @@ void start_send_file()
                 msleep(5);
                 ble_send_state = ble_file_send(bs_buf, read_size);
             }
-//			send_size += read_size;
-//			logi("send size = %d/%d",send_size,file_size);
         } else {
             break;
         }
@@ -173,6 +172,7 @@ void start_send_file()
 	    logi("over send END_FRAME--------------");
 	}
 	//发送接收到的stop命令，在ble_app里面会概率性出现重复的现象
+	auto_shutdown(true);
 	xfclose(frxin);
     general_free(frxin);
 	general_free(bs_buf);

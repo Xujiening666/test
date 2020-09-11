@@ -419,7 +419,7 @@ void set_time(uint32_t t)
 		/* Leap years.	*/
 		{ 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 }
 	};
-	uint16_t days, rem, y;
+	uint32_t days, rem, y;
 	uint16_t *ip;
 	
 	t += 28800;//时区的八个小时
@@ -439,7 +439,7 @@ void set_time(uint32_t t)
 	uint8_t tm_hour = rem / SECS_PER_HOUR;
 	rem %= SECS_PER_HOUR;
 	uint8_t tm_min = rem / 60;
-	uint8_t tm_sec = rem % 60;
+	uint8_t tm_sec = rem % 60;	
 	/* January 1, 1970 was a Thursday.	*/
 	uint8_t tm_wday = (4 + days) % 7;
 	if (tm_wday < 0)

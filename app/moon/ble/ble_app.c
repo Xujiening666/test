@@ -240,11 +240,9 @@ uint8_t send_device_stats()
 { 
     uint8_t *msg;
 	msg = general_calloc(BT_BUFFER_SIZE);
-//    __maybe_unused uint8_t sn_id[8];
     __maybe_unused uint8_t tmp_8;
 	__maybe_unused uint64_t tmp_64;
 	uint8_t tmp_len;
-//	__maybe_unused bool tmp_bool;
 	uint8_t len_sum = 0;
 	uint8_t *u64_str;
 	u64_str = libc_calloc(24);
@@ -458,18 +456,31 @@ void send_record_message(uint8_t cmd)
 			return;
 
     uint8_t *msg;
-	msg =  general_calloc(20);
+	uint8_t data_len = 0;
+	msg =  general_calloc(22);
     uint32_t current_wav_id = get_current_wav_id();
 	libc_memcpy(msg, BANBEN_ID, LEN_FIRST_BANBEN_ID);
+	data_len += LEN_FIRST_BANBEN_ID;
 	libc_memcpy(msg + OFFSET_FIRST_FRAME, FIRST_FRAME, LEN_FIRST_FRAME);
+	data_len += LEN_FIRST_FRAME;
+	
 	*(msg + OFFSET_CMD) = cmd;
-	*(msg + OFFSET_ERROR) = ERR_CODE_SUCCESS;
-	*(msg + 10) = current_wav_id;
-	*(msg + 11) = current_wav_id >> 8;
-	*(msg + 12) = current_wav_id >> 16;
-	*(msg + 13) = current_wav_id >> 24;
-	libc_memcpy(msg + 14, END_FRAME, LEN_END_FRAME);
-	ble_cmd_send(msg, 20);
+	data_len += 1;
+	
+	if(cmd == TAG_RECORD_START || cmd == TAG_RECORD_STOP) {
+		*(msg + OFFSET_ERROR) = ERR_CODE_SUCCESS;
+		data_len += 1;
+	}
+	
+	*(msg + data_len) = current_wav_id;
+	*(msg + data_len + 1) = current_wav_id >> 8;
+	*(msg + data_len + 2) = current_wav_id >> 16;
+	*(msg + data_len + 3) = current_wav_id >> 24;
+	data_len += 4;
+	
+	libc_memcpy(msg + data_len, END_FRAME, LEN_END_FRAME);
+	data_len += LEN_END_FRAME;
+	ble_cmd_send(msg, data_len);
 	general_free(msg);
 }
 
@@ -532,6 +543,18 @@ uint8_t reset_device()
 }
 
 AT(.ble_flash_seg)
+void update_dav_data()
+{
+	adv_data[23] = 0;
+	adv_data[24] = 0;
+	adv_data[25] = 0;
+	adv_data[26] = 0;
+	adv_data[27] = 0;
+	gap_advertisements_set_data(31,adv_data);
+}
+
+
+AT(.ble_flash_seg)
 void send_unbind_user_msg()
 {
     if(!ble_con_flag)
@@ -546,6 +569,7 @@ void send_unbind_user_msg()
 	libc_memcpy(msg + 10, END_FRAME, LEN_END_FRAME);
 	ble_cmd_send(msg, 16);
 	general_free(msg);
+	update_dav_data();
 }
 
 AT(.ble_flash_seg)
@@ -645,10 +669,12 @@ void process_cmd(uint8_t *buf,uint16_t buff_size)
 			data_len = 6;
 			break;
 		case TAG_SET_TIME:
+			tmp = 0;
 			tmp += buf[12];tmp = tmp << 8;
 			tmp += buf[11];tmp = tmp << 8;
 		    tmp += buf[10];tmp = tmp << 8;
 			tmp += buf[9];
+			loge("time: 0x%x",tmp);
 			set_time(tmp);
 			data_len = 2;
 			break;
@@ -683,6 +709,7 @@ void process_cmd(uint8_t *buf,uint16_t buff_size)
 		case TAG_UNBIND_USER:
 			flag = 0;
 			info_set(INFO_USER_BIND_FLAG, (void *)&flag, 1);
+		    update_dav_data();
 		    data_len = 2;
 			break;
 		case TAG_GET_DEVICE_STATS:
@@ -714,21 +741,20 @@ void process_cmd(uint8_t *buf,uint16_t buff_size)
 			} else {
                 error_code = ERR_CODE_NEED_CLOSE_USB;
 			}
-			//event_put(KEY_BLE_START_SEND_RECORD_BY_NAME);
 			data_len = 2;
 	 	    break;
 			
 		case TAG_DEL_FILE_NAME:
-		    libc_memset(NEED_SEND_DEL_FILE_NAME, 0 ,sizeof(NEED_SEND_DEL_FILE_NAME));
-			for(flag = OFFSET_CMD; flag < buff_size; flag++)
-			{
-			    NEED_SEND_DEL_FILE_NAME[flag - 9] = buf[flag];
-				if(flag > 39){
-                    error_code = ERR_CODE_UNKNOW_CMD;
-					break;
-				}
-			}
-			logi("del_file_name %s", NEED_SEND_DEL_FILE_NAME);
+//		    libc_memset(NEED_SEND_DEL_FILE_NAME, 0 ,sizeof(NEED_SEND_DEL_FILE_NAME));
+//			for(flag = OFFSET_CMD; flag < buff_size; flag++)
+//			{
+//			    NEED_SEND_DEL_FILE_NAME[flag - 9] = buf[flag];
+//				if(flag > 39){
+//                    error_code = ERR_CODE_UNKNOW_CMD;
+//					break;
+//				}
+//			}
+//			logi("del_file_name %s", NEED_SEND_DEL_FILE_NAME);
 			tmp = 0;
             tmp = (buf[OFFSET_CMD + 4] - '0') * 10000;
             tmp = (tmp + buf[OFFSET_CMD + 5] - '0') * 1000;
@@ -978,7 +1004,7 @@ void ble_adv_init(void)
     ble_name_set(&adv_data[adv_offset+2]);
     adv_offset += tmp_8 + 2;
 
-    //02-AD_TYPE_INCOMPLETE_UUID_16
+      //02-AD_TYPE_INCOMPLETE_UUID_16
 //    adv_data[adv_offset] = 3;
 //    adv_data[adv_offset+1] = AD_TYPE_INCOMPLETE_UUID_16;
 //    adv_data[adv_offset+2] = (uint8_t)UUID_SERVICE_OTA;

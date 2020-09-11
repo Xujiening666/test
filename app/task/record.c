@@ -35,7 +35,7 @@ extern uint8_t record_bitrate_index;
 record_context_t *rec_context;
 
 extern struct rtc_t rtc;
-
+bool send_stop_record_msg = false;
 /*
 *根据文件号码获取文件大小
 */
@@ -109,58 +109,7 @@ uint32_t ext_getfree(uint8_t flag)//flag 1: fre_sect flag:0 tot_sect
     }
 	return ERR_CODE_NOT_GET_STORAGE;
 }
-/*
-    FRESULT res;
-    XFILE *file;
-    uint32_t try_count = rec_context->max_play_num;
 
-    if (rec_context->cur_play_num < 0 || rec_context->total_file == 0) {
-        return;
-    }
-
-    if (REC_STATUS_RECORDING == rec_context->status ){
-        logd("stop record");
-        stop_record();
-    } else if (REC_STATUS_PLAYING == rec_context->status) {
-        logd("stop play");
-        stop_play_record_file();
-    } else {
-        // check if the file exists.
-        file = libc_calloc(sizeof(*file));
-next:
-        index_to_filename(rec_context->cur_play_num, rec_context->play_file_name);
-        res = xfopen(file, rec_context->play_file_name, FA_READ | FA_OPEN_EXISTING);
-        if (FR_NO_FILE == res || FR_NO_PATH == res) {
-            xfclose(file);
-            if (try_count) {
-                --try_count;
-                // 跳过不存在的文件 
-                if (rec_context->cur_play_num < rec_context->max_play_num) {
-                    rec_context->cur_play_num++;
-                } else {
-                    rec_context->cur_play_num = 0;
-                }
-                goto next;
-            }
-        } else {
-            xfclose(file);
-        }
-        libc_free(file);
-    }
-
-	index_to_filename(rec_context->cur_play_num, rec_context->play_file_name);
-    logd("delete record file:%s", rec_context->play_file_name);
-    res = xfunlink(rec_context->play_file_name);//delete the record file
-    if (FR_OK == res){
-        //logd("result=%d",res);
-        rec_context->total_file--;
-        rec_context->cur_play_num++;
-        logd("cur_play_num:%d, total_file:%d", rec_context->cur_play_num,rec_context->total_file);
-    } else{
-        logd("error = %d",res);
-    }
-
-*/
 AT(.ble_flash_seg)
 uint8_t del_rec_file_by_name(uint32_t file_index)
 {
@@ -554,64 +503,6 @@ try_opendir:
     }
 }
 
-/* 删除录音文件；
- * @param rec_context: 录音上下文
- */
-// 
-//AT(.record_flash_seg)
-//void delete_record_file_by_num(void)
-//{
-//    FRESULT res;
-//    XFILE *file;
-//    uint32_t try_count = rec_context->max_play_num;
-
-//    if (rec_context->cur_play_num < 0 || rec_context->total_file == 0) {
-//        return;
-//    }
-
-//    if (REC_STATUS_RECORDING == rec_context->status ){
-//        logd("stop record");
-//        stop_record();
-//    } else if (REC_STATUS_PLAYING == rec_context->status) {
-//        logd("stop play");
-//        stop_play_record_file();
-//    } else {
-//        /* check if the file exists.*/
-//        file = libc_calloc(sizeof(*file));
-//next:
-//        index_to_filename(rec_context->cur_play_num, rec_context->play_file_name);
-//        res = xfopen(file, rec_context->play_file_name, FA_READ | FA_OPEN_EXISTING);
-//        if (FR_NO_FILE == res || FR_NO_PATH == res) {
-//            xfclose(file);
-//            if (try_count) {
-//                --try_count;
-//                /* 跳过不存在的文件 */
-//                if (rec_context->cur_play_num < rec_context->max_play_num) {
-//                    rec_context->cur_play_num++;
-//                } else {
-//                    rec_context->cur_play_num = 0;
-//                }
-//                goto next;
-//            }
-//        } else {
-//            xfclose(file);
-//        }
-//        libc_free(file);
-//    }
-
-//	index_to_filename(rec_context->cur_play_num, rec_context->play_file_name);
-//    logd("delete record file:%s", rec_context->play_file_name);
-//    res = xfunlink(rec_context->play_file_name);//delete the record file
-//    if (FR_OK == res){
-//        //logd("result=%d",res);
-//        rec_context->total_file--;
-//        rec_context->cur_play_num++;
-//        logd("cur_play_num:%d, total_file:%d", rec_context->cur_play_num,rec_context->total_file);
-//    } else{
-//        logd("error = %d",res);
-//    }
-//}
-
 /* 停止录音文件的播放；
  * @param rec_context: 录音上下文
  */
@@ -704,6 +595,10 @@ uint8_t digits10(uint64_t value)
 AT(.record_flash_seg)
 uint8_t uint64_to_str(uint64_t value, uint8_t *string_bit)
 {
+    if(value == 0) {
+		*string_bit = '0';
+        return 1;
+	}
 	const uint8_t digits[201] =
 		"0001020304050607080910111213141516171819"
 		"2021222324252627282930313233343536373839"
@@ -1464,9 +1359,13 @@ void start_record(void)
 AT(.record_flash_seg)
 void stop_record(void)
 {
-    if(get_ble_con_status() && REC_STATUS_RECORDING == rec_context->status){
-		send_record_message(TAG_SEND_APP_STOP_RECORD);
+    if(send_stop_record_msg) {
+        send_stop_record_msg = false;
+	} else {
+        if(REC_STATUS_RECORDING == rec_context->status)
+			send_record_message(TAG_SEND_APP_STOP_RECORD);
 	}
+
     recorder_stop();
     recorder_close();
     if (AR_ERR_NO_STORE_FILE == recorder_get_error_type()) {
@@ -1637,6 +1536,7 @@ int32_t select_record_device(uint32_t dev_num)
 /* 切换录音设备；
  * @param auto_play: true:自动播放录音文件； flase:不自动播放录音文件
  */
+ #if 0
 void switch_record_device(bool auto_play)
 {
     int ret;
@@ -1703,256 +1603,6 @@ void switch_record_device(bool auto_play)
     }
 }
 #endif
-
-#if (RECORD_LINEIN_FUNC || RECORD_FM_FUNC)
-
-//linein 录音初始化
-void linein_record_init(uint32_t rec_func)
-{
-    int32_t ret;
-    if (NULL == rec_context) {
-        rec_context = libc_calloc(sizeof(*rec_context));
-        if (NULL == rec_context) {
-            loge("calloc rec_context fail");
-            return;
-        }
-    }
-
-    recorder_init_params_t params;
-#if (0 == RECORD_STREAM_TYPE)
-    rec_context->streamtype = SLTK_STYPE_FATFS;
-#elif (1 == RECORD_STREAM_TYPE)
-    rec_context->streamtype = SLTK_STYPE_FLASH_RECORD;
-#endif
-
-    params.streamtype = rec_context->streamtype;
-    switch (rec_func) {
-    case 1: //录linein
-        params.mode_num = 1;
-        break;
-
-    case 2: //录mic
-        params.mode_num = 0;
-        break;
-
-    case 3: //录mic+linein
-    default:
-        params.mode_num = 2;
-        break;
-    }
-    create_recorder(&params);
-    recorder_set_event_listener(recorder_event_listener);
-
-    if (SLTK_STYPE_FATFS == rec_context->streamtype) {
-        //录到文件系统
-        ret = select_record_device(DEV_UDISK);
-        if (ret < 0) {
-        #if SD_EN
-            ret = select_record_device(DEV_SDCARD);
-            if (ret < 0) {
-                device_set_num(DEV_NONE);
-                logi("have no dev");
-            } else {
-                rec_context->new_dev = DEV_SDCARD;
-                if (device_get_num() == DEV_SDCARD) {
-                    sd_detect_set(1);
-                }
-            }
-        #endif
-        } else {
-        #if SD_EN
-            if (device_get_num() == DEV_SDCARD) {
-                sd_detect_set(1);
-            }
-        #endif
-        }
-    } else if (SLTK_STYPE_FLASH_RECORD == rec_context->streamtype) {
-        //录到flash
-    }
-}
-
-//linein 录音退出
-void linein_record_deinit(void)
-{
-    if (rec_context) {
-        if (REC_STATUS_RECORDING == rec_context->status ||
-            REC_STATUS_IDLE == rec_context->status) {
-            stop_record();
-        } else if (REC_STATUS_PLAYING == rec_context->status) {
-            stop_play_record_file();
-            audio_service_set_playback_volume(np.volume);
-        }
-    }
-
-    destroy_recorder();
-
-    if (SLTK_STYPE_FATFS == rec_context->streamtype) {
-        f_unmount("0:");
-        xfs_cmd(XFS_CMD_FSCACHE_DEINIT, 1);
-    }
-
-    if (rec_context) {
-        libc_free(rec_context);
-        rec_context = NULL;
-    }
-}
-
-//更新linein录音(或者录音播放)的显示时间
-void linein_record_update_disp_time(void)
-{
-    if (REC_STATUS_RECORDING == rec_context->status) {
-        get_record_time();
-        //disp_menu(MENU_RECORD_ING, rec_context->rtime.min, rec_context->rtime.sec);
-    } else if (REC_STATUS_PLAYING == rec_context->status) {
-        get_play_time();
-        //disp_menu(MENU_RECORD_PLAY, np.ptime.min, np.ptime.sec);
-    }
-}
-
-//linein录音处理SD卡事件
-void linein_record_proc_sd_event(uint8_t mode, uint32_t event)
-{
-#if 0
-#if SD_EN
-    if (SLTK_STYPE_FATFS != rec_context->streamtype) {
-        return;
-    }
-
-    switch (event) {
-    case DEVICE_EVENT_SD_IN:
-        logi("sd in");
-        if (REC_STATUS_PLAYING == rec_context->status) {
-            stop_play_record_file();     //stop play record file
-            audio_service_set_playback_volume(np.volume);
-            adda_init(mode);
-        } else if (REC_STATUS_RECORDING == rec_context->status) {
-            logd("stop rec");
-            stop_record();
-        }
-        rec_context->new_dev = DEV_SDCARD;
-        if (device_get_num() != DEV_SDCARD) {
-            if (RECORD_NEW_DEVICE_FIRST) {
-                switch_record_device(0);
-                sd_detect_set(1);
-            }
-        }
-        break;
-
-    case DEVICE_EVENT_SD_OUT:
-        if (REC_STATUS_PLAYING == rec_context->status && device_get_num() == DEV_SDCARD) {
-            stop_play_record_file();     //stop play record file
-            audio_service_set_playback_volume(np.volume);
-            adda_init(mode);
-        } else if (REC_STATUS_RECORDING == rec_context->status && device_get_num() == DEV_SDCARD) {
-            logd("stop rec");
-            stop_record();
-        }
-
-        rec_context->new_dev = DEV_UDISK;
-        sd_detect_set(1);
-        if (device_get_num() == DEV_SDCARD) {
-            switch_record_device(0);
-        }
-        break;
-
-    default:
-        break;
-    }
-#endif //SD_EN
-#endif
-}
-
-//linein录音处理U盘事件
-void linein_record_proc_udisk_event(uint8_t mode, uint32_t event)
-{
-#if 0
-#if USB_DISK_EN
-    if (SLTK_STYPE_FATFS != rec_context->streamtype) {
-        return;
-    }
-
-    switch (event) {
-    case DEVICE_EVENT_UDISK_IN:
-        logi("udisk in");
-        if (REC_STATUS_PLAYING == rec_context->status) {
-            stop_play_record_file();     //stop play record file
-            audio_service_set_playback_volume(np.volume);
-            adda_init(mode);
-        } else if (REC_STATUS_RECORDING == rec_context->status) {
-            logd("stop rec");
-            stop_record();
-        }
-
-        rec_context->new_dev = DEV_UDISK;
-        if (device_get_num() != DEV_UDISK) {
-            if (RECORD_NEW_DEVICE_FIRST) {
-                switch_record_device(0);
-            }
-            sd_detect_set(1);
-        }
-        break;
-
-    case DEVICE_EVENT_UDISK_OUT:
-        logi("udisk out");
-        if (REC_STATUS_PLAYING == rec_context->status  && device_get_num() == DEV_UDISK) {
-            stop_play_record_file();     //stop play record file
-            audio_service_set_playback_volume(np.volume);
-            adda_init(mode);
-        } else if (REC_STATUS_RECORDING == rec_context->status && device_get_num() == DEV_UDISK) {
-            logd("stop rec");
-            stop_record();
-        }
-
-        rec_context->new_dev = DEV_SDCARD;
-        usb_host_deinit();
-        usb_detect_set(USB_DETECT);
-        if (device_get_num() == DEV_UDISK) {
-            switch_record_device(0);
-            sd_detect_set(1);
-        }
-        break;
-
-    default:
-        break;
-    }
-#endif //USB_DISK_EN
-#endif
-}
-
-void linein_record_play_rec_file(uint32_t mode_id)
-{
-    stop_record();               //stop record
-    adda_deinit(mode_id);
-    /* 如果录linein,由于录的是音量处理前的数据，因此播放时保持原音量可听到相同音量大小的声音
-     * 如果录的是linein+mic，由于录的是音量处理后的数据，因此播放需要设到100音量，否则声音大小会有衰减
-     */
-    if (MODE_LINEIN == mode_id) {
-        if (RECORD_LINEIN_FUNC == 3) {
-            linein_play_vol = 100;
-            audio_service_set_playback_volume(linein_play_vol);
-        }
-    } else if (MODE_FM == mode_id) {
-        if (RECORD_FM_FUNC == 3) {
-            fm_play_vol = 100;
-            audio_service_set_playback_volume(fm_play_vol);
-        }
-    }
-
-    start_play_record_file();    //start play record file
-}
-
-void linein_stop_play_rec_file(uint8_t mode)
-{
-    stop_play_record_file();     //stop play record file
-    audio_service_set_playback_volume(np.volume);
-    adda_init(mode);
-#if SD_EN
-    if (DEV_SDCARD == device_get_num()) {
-        sd_detect_set(1);
-    }
-#endif
-}
-
 #endif
 
 AT(.karaoke_sram_seg)
@@ -2167,18 +1817,6 @@ void record_event_process(uint32_t event)
 		logi("event 0x%x",event);
         mode_switch_auto();
         break;
-#if 0
-	case KEY_EVENT_SU | KEY_PLAY_SAVE_REC:		
-		 if (REC_STATUS_RECORDING == rec_context->status) {
-            logd("save");
-            stop_record();
-#if DISP_EN
-        disp_state(STATE_REC_END);
-#endif
-           // start_play_record_file();
-        } 
-		break;
-#endif
     case KEY_EVENT_SU | KEY_PLAY:       //play rec
         if(!hp_get_get_detach_state()) { //不插耳机的时候
             if(REC_STATUS_RECORDING == rec_context->status) {//如果正在录音
@@ -2261,7 +1899,7 @@ void record_event_process(uint32_t event)
         break;
 #endif
     case KEY_BLE_START_RECORD:
-        //stop_record();
+		send_stop_record_msg = false;
         if (set_record_ble_param(true)){
 		    /* Modify by arunboy 20200629 */
             //audio_service_reset_karaoke();
@@ -2270,8 +1908,9 @@ void record_event_process(uint32_t event)
         }
         break;
     case KEY_BLE_STOP_RECORD:
-		send_record_message(TAG_RECORD_STOP);
         logd("stop rec");
+	    send_record_message(TAG_RECORD_STOP);
+	    send_stop_record_msg = true;
         stop_record();
 	    ble_app_cmd(BLE_APP_CMD_STOP, 1);
         set_record_ble_param(false);
@@ -2285,22 +1924,20 @@ void record_event_process(uint32_t event)
 //        }
         start_send_dir_files_list();
         break;
-    case KEY_BLE_START_SEND_RECORD_BY_ID:
-        if (REC_STATUS_RECORDING == rec_context->status) {
-            stop_record();
-        } else if (REC_STATUS_PLAYING == rec_context->status) {
-            stop_play_record_file();
-        }
-//       stop_sending_flag = false;
-		send_rec_file_by_id();
-        break;
+//    case KEY_BLE_START_SEND_RECORD_BY_ID:
+//        if (REC_STATUS_RECORDING == rec_context->status) {
+//            stop_record();
+//        } else if (REC_STATUS_PLAYING == rec_context->status) {
+//            stop_play_record_file();
+//        }
+//		send_rec_file_by_id();
+//        break;
 	case KEY_BLE_START_SEND_RECORD_BY_NAME:
 		if (REC_STATUS_RECORDING == rec_context->status) {
             stop_record();
         } else if (REC_STATUS_PLAYING == rec_context->status) {
             stop_play_record_file();
         }
-//        stop_sending_flag = false;
 		send_rec_file_by_name();
         break;
     case LE_EVENT_APP:

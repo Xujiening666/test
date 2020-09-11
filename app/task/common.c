@@ -298,12 +298,12 @@ void common_event_process(uint32_t event)
 
 #if (MODE_USBDEV_EN || EQ_ALL_MODE_SUPPORT || USB_AUDIO_ALL_MODE_SUPPORT)
     case DEVICE_EVENT_PC_IN:
-        //logi("event pc in");
+        logi("event pc in");
         usb_pc_in_proc();
         break;
 
     case DEVICE_EVENT_PC_OUT:
-        //logi("event pc out");
+        logi("event pc out");
         if (MODE_USBDEV == scene_mode.sta) {
 			HP_OUT_BUT_NOT_START_RECORD = true;
             mode_switch_auto();

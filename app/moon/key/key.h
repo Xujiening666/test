@@ -80,7 +80,7 @@ typedef enum {
 #define KEY_HP_OUT          0x39
 #define KEY_BLE_START_RECORD                 0x40
 #define KEY_BLE_STOP_RECORD                  0x41
-#define KEY_BLE_START_SEND_RECORD_BY_ID      0x43
+//#define KEY_BLE_START_SEND_RECORD_BY_ID      0x43
 #define KEY_BLE_SEND_DIR_FILES_LIST          0x44
 #define KEY_BLE_SEND_DEVICE_STATS            0x45
 #define KEY_BLE_START_SEND_RECORD_BY_NAME    0x46

@@ -148,6 +148,8 @@ void linein_record_play_rec_file(uint32_t mode_id);
 //linein停止播放录音文件
 void linein_stop_play_rec_file(uint8_t mode);
 
+//获取sd卡sn校验
+bool get_sd_sn_status(void);
 void record_event_process(uint32_t msg);
 void mode_record(void);
 void mode_record_enter(void);

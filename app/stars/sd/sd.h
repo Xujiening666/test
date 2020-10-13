@@ -78,6 +78,7 @@ DRESULT sd_get_status(void);
 DRESULT sd_failcb(void);
 void sd_set_wakeup(bool enable);
 void sd_irq_process(void);
+uint8_t sd_check_sn(void);
 
 
 #endif

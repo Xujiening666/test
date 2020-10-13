@@ -219,8 +219,7 @@ SECTIONS
         *(.usbd_audio_eq_seg)
         *(.usbd_msc_seg)
         *(.usbd_msc_eq_seg)
-        *(.timer_seg)
-        *(.timer_sram_seg)
+       
         *(.i2s_sram_seg)
         *(.auss_sram_seg)
         *(.spi_seg)
@@ -240,7 +239,7 @@ SECTIONS
         *(.freertos_sram_seg)
         *(.app_sram_seg)
         *(.motor_sram_seg)
-        *(.trng_sram_seg)
+        
         *(.charge_sram_seg)
         *charge.o(.rodata*)
         *hal_power_lib.o(.rodata*)
@@ -417,6 +416,9 @@ SECTIONS
         *(.audioplayer_sram_seg)
         *(.xfs_sram_seg)
         *(.xfs_diskio_sram_seg)
+	*(.trng_sram_seg)
+	*(.timer_seg)
+        *(.timer_sram_seg)
     } >SRAM1
 
     .sram2_sec "SRAM2_ADDR" : AT( "SRAM2_LADDR" )
@@ -1278,26 +1280,32 @@ disk_ioctl                                          =0x0000b52c;
 disk_config                                         =0x0000b55c;
 f_mount                                             =0x0000b94c;
 f_read                                              =0x0000b9d4;
-f_write                                             =0x0000bb88;
-//f_sync                                              =0x0000bd7e;
-//f_close                                             =0x0000bed2;
+//f_write                                           =0x0000bb88;
+//f_sync                                            =0x0000bd7e;
+//f_close                                           =0x0000bed2;
 f_lseek                                             =0x0000bf04;
 f_closedir                                          =0x0000c2bc;
 f_readdir                                           =0x0000c4f8;
-//f_open                                              =0x0000c5f8;
-//f_opendir                                           =0x0000c920;
-//f_unlink                                            =0x0000c9f8;
+//f_open                                            =0x0000c5f8;
+//f_opendir                                         =0x0000c920;
+//f_unlink                                          =0x0000c9f8;
 f_setcp                                             =0x0000ce7a;
 f_getfree					    =0x0000c2eb;              
 sync_window                                         =0x0000d7b5;
 follow_path                                         =0x0000ef7d;
-create_chain                                        =0x0000dd72;
+//create_chain                                      =0x0000dd72;
 st_clust                                            =0x0000e12b;
 dir_register                                        =0x0000eb0f;
 store_xdir                                          =0x0000e415;
 sync_fs                                             =0x0000d82f;
 remove_chain                                        =0x0000dc79;
-find_volume                                         =0x0000b581;
+find_volume                                         =0x0000b581;  
+//get_ldnumber					    =0x0000e5b4;
+//FatFs						    =0x008011dc;
+//Fsid						    =0x008011e4; 
+//lock_fs					    =0x0000d62a;
+//check_fs					    =0x0000e5ee;
+//clear_lock					    =0x0000d794;
 check_file_name                                     =0x0000cea1;   /* thumbObject */
 into_dir                                            =0x0000cefd;   /* thumbObject */
 into_borther_item                                   =0x0000d021;   /* thumbObject */
@@ -1309,6 +1317,8 @@ inc_lock                                            =0x0000d6c9;   /* thumbObjec
 move_window                                         =0x0000d7f9;   /* thumbObject */
 clst2sect                                           =0x0000d8c5;   /* thumbObject */
 get_fat                                             =0x0000d8db;   /* thumbObject */
+find_bitmap                                         =0x0000db0b;
+change_bitmap					    =0x0000db9d;
 clmt_clust                                          =0x0000dee5;   /* thumbObject */
 dir_sdi                                             =0x0000df67;   /* thumbObject */
 ld_clust                                            =0x0000e10d;   /* thumbObject */

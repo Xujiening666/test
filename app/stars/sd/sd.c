@@ -191,6 +191,24 @@ DRESULT sd_failcb(void)
     return 0;
 }
 
+uint8_t sd_check_sn(void)
+{
+    if(CHECK_SD_SN) {
+		uint32_t cid[4];
+		sd_disk_ioctl(MMC_GET_CID, (void*)cid);
+	    logi("cid:0x%x,0x%x,0x%x,0x%x",cid[0],cid[1],cid[2],cid[3]);
+	    if(SD_SN_CID_0 == cid[0] && SD_SN_CID_1 == cid[1] &&
+	       SD_SN_CID_2 == cid[2] && SD_SN_CID_3 == cid[3]) {
+		    return 1;
+		}
+		else {
+			return 0;
+		}
+	} else {
+        return 1;
+	}
+}
+
 #else
 void sd_detect_set(uint8_t sta)
 {

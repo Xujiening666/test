@@ -118,22 +118,6 @@ bool startup_is_first(void)
 
 #define W4BYTE(p)       (*(uint32_t *)(p))
 
-AT(.mode_set_seg)
-void check_sn_id(void) 
-{
-    uint8_t sn_id[8];
-	get_chip_id(sn_id,8);
-	loge("chip_id = 0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x",sn_id[0],sn_id[1],sn_id[2],sn_id[3],sn_id[4],sn_id[5],sn_id[6],sn_id[7]);
-	if(sn_id[0] == 0xff && sn_id[1] == 0xff && sn_id[2] == 0xff && sn_id[3] == 0xff
-	&& sn_id[4] == 0xff && sn_id[5] == 0xff && sn_id[6] == 0xff && sn_id[7] == 0xff){
-	    W4BYTE(sn_id)= trng_get_random_data();
-	    W4BYTE(&sn_id[4])= trng_get_random_data();
-	    set_chip_id(sn_id,8);
-	}	
-	loge("chip_id = 0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x",sn_id[0],sn_id[1],sn_id[2],sn_id[3],sn_id[4],sn_id[5],sn_id[6],sn_id[7]);
-}
-
-
 
 AT(.mode_set_seg)
 void taskmain_init(void)

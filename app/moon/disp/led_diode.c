@@ -364,8 +364,10 @@ void disp_state_led_diode(enum disp_state_e state)
 		disp_led_diode(LED_BLUE, DISP_ON);
         break;
 	case STATE_REC_ERROR:
+		disp_led_diode(LED_BLUE, DISP_OFF);
+		disp_led_diode(LED_RED, DISP_OFF);
 		disp_led_diode(LED_BLUE, DISP_FLASH_FAST);
-		disp_led_diode(LED_RED, DISP_FLASH_FAST);
+	    disp_led_diode(LED_RED, DISP_FLASH_FAST);
 	    break;
 //	case STATE_CLOSE_RED:
 //		disp_led_diode(LED_RED, DISP_OFF);

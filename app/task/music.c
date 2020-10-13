@@ -478,6 +478,13 @@ void mode_music_enter(void)
             mode_switch_auto();
         }
     }
+
+	if (!sd_check_sn()) {
+		device_set_num(DEV_NONE);
+		logi("music SN check err");
+		mode_switch_auto();
+	}
+	
     /* Modify by arunboy 20200518 */
 	//clk_set_cpux_freq(DVFS_LOCAL_ENCODE_MP3_FREQ,1);
 #if (EQ_ALL_MODE_SUPPORT || USB_AUDIO_ALL_MODE_SUPPORT)

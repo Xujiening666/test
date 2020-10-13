@@ -75,7 +75,7 @@
 #if (AUDIO_PHONE_OUTPUT_SEL == 1)
 #define AUDIO_DAC_GAIN                      -8
 #else
-#define AUDIO_DAC_GAIN                      10
+#define AUDIO_DAC_GAIN                      0
 #endif
 
 /* DMIC(digital microphone) config */
@@ -287,6 +287,12 @@
 #define SD_DETECT_EN                        0
 #define SD_DM_SHARE_EN                      0
 #endif
+
+#define CHECK_SD_SN                         1
+#define SD_SN_CID_0                         0x12345653
+#define SD_SN_CID_1                         0x44000000
+#define SD_SN_CID_2                         0x0046f034
+#define SD_SN_CID_3                         0x4a014269
 
 /***************************************************************************
  *               usb config

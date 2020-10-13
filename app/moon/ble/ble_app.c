@@ -506,21 +506,26 @@ void send_battery_message(void)
 AT(.ble_flash_seg)
 uint8_t ble_start_record()
 {
+    //判断sn号是否一致
+    if(!get_sd_sn_status()) {
+        return ERR_CODE_NO_RECORD_MODE;
+	}
+    
 	//判断是否处于录音模式
-	if(MODE_RECORD != mode_get_sta()){
+	if(MODE_RECORD != mode_get_sta()) {
         return ERR_CODE_NO_RECORD_MODE;
 	}
 	//判断是否处于设备播放模式
-	if(REC_STATUS_PLAYING == rec_context->status){
+	if(REC_STATUS_PLAYING == rec_context->status) {
 		return ERR_CODE_RECORD_PLAYING;
 	}
 	//判断是否处于设备自己在录音
-	if(ble_record_start == 0 && REC_STATUS_RECORDING == rec_context->status){
+	if(ble_record_start == 0 && REC_STATUS_RECORDING == rec_context->status) {
         send_record_message(TAG_RECORD_START);
 		return ERR_CODE_SUCCESS;
 	}
 	//判断是否是续传模式
-	if(1 == ble_record_start){
+	if(1 == ble_record_start) {
 		send_record_message(TAG_RECORD_START);
 		can_send_real_record_data = true;
 	    return ERR_CODE_SUCCESS;

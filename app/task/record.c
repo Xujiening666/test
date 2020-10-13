@@ -36,6 +36,7 @@ record_context_t *rec_context;
 
 extern struct rtc_t rtc;
 bool send_stop_record_msg = false;
+bool sd_sn_status = false;
 /*
 *根据文件号码获取文件大小
 */
@@ -54,25 +55,14 @@ const uint8_t END_END_BIT[LEN_END_BIT + 1]   = {0x7d,0x5d,0x7d};                
 char NEED_SEND_DEL_FILE_NAME[15];
 
 AT(.record_flash_seg)
+bool get_sd_sn_status(void)
+{
+    return sd_sn_status;
+}
+
+AT(.record_flash_seg)
 uint32_t ext_getfree(uint8_t flag)//flag 1: fre_sect flag:0 tot_sect
 {
-//    FATFS *fs1;
-//    DWORD fre_clust = 0;
-//   __maybe_unused DWORD fre_sect = 0;
-//   __maybe_unused DWORD tot_sect = 0;
-//    uint8_t err = xgetfree("0:", &fre_clust, &fs1);
-//	if(err != FR_OK){
-//        return ERR_CODE_NOT_GET_STORAGE;
-//	}
-//    if(0 == flag){
-//		tot_sect = (fs1->n_fatent-2) * fs1->csize;
-//        return tot_sect>>1;
-//	} else if(1 == flag) {
-//		fre_sect = fre_clust*fs1->csize;
-//        return fre_sect>>1;
-//	} else {
-//		return ERR_CODE_NOT_GET_STORAGE;
-//	}
 	__maybe_unused DWORD fre_sect = 0;
 	__maybe_unused DWORD tot_sect = 0;
 
@@ -1304,6 +1294,11 @@ AT(.record_flash_seg)
 void start_record(void)
 {
     logd("start_record:%d, :%d", general_get_avaheapsize(), xPortGetFreeHeapSize());
+
+	if (!sd_check_sn()) {
+        return;
+	}
+	
     if (SLTK_STYPE_FATFS == rec_context->streamtype) {
         if (false == device_is_online(DEV_SDCARD)
             && false == device_is_online(DEV_UDISK)) {
@@ -1460,8 +1455,7 @@ void get_record_time(void)
 AT(.record_flash_seg)
 int32_t select_record_device(uint32_t dev_num)
 {
-    int32_t ret;
-
+    int32_t ret;	
     ret = device_try(dev_num);
     if (ret < 0) {
         if (DEV_SDCARD == dev_num) {
@@ -1604,6 +1598,12 @@ void switch_record_device(bool auto_play)
 }
 #endif
 #endif
+
+uint8_t get_record_makeup_gain(void)
+{
+    return 6;
+}
+
 
 AT(.karaoke_sram_seg)
 uint8_t get_karaok_aout_enable(void)
@@ -1971,12 +1971,9 @@ AT(.mode_record_seg)
 void mode_record(void)
 {
     logi("record mode.");
-
     mode_record_enter();
     mode_record_loop();
-	logd("arunboy back mode_record_loop");
     mode_record_exit();
-	logd("arunboy back mode_record_exit");
 }
 extern bool HP_OUT_BUT_NOT_START_RECORD;
 AT(.mode_record_seg)
@@ -2054,7 +2051,6 @@ void mode_record_enter(void)
                 rec_context->new_dev = device_2nd;
                 
                 #if RECORD_AUTO_PLAY				
-				logd("arunboy arunboy hp_get_get_detach_state() = %d", hp_get_get_detach_state());
                 if (hp_get_get_detach_state()) {
                      if (rec_context->total_file == 0) {
 //                     #if DISP_EN
@@ -2132,9 +2128,20 @@ void mode_record_enter(void)
     }
 	ext_getfree(0);
 	ext_getfree(1);
+	
+	
 #if !TURN_ON_AUTO_REC
     disp_state(STATE_REC_END);    
 #endif
+
+	if(0 == sd_check_sn()) {
+		loge("sd_check_sn err");
+		sd_sn_status = false;
+		disp_state(STATE_REC_ERROR);
+	} else {
+		sd_sn_status = true;
+	}
+	
 	logi("arunboy now is go back mode_record_enter!");
 #endif
 }
